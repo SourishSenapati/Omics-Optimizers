@@ -1,4 +1,6 @@
-# Data ingestion module
+"""
+Module for aggregating and harmonizing epidemiological data.
+"""
 # Aggregates public health telemetry from structured and unstructured sources
 
 import json
@@ -7,16 +9,16 @@ import requests
 import feedparser
 
 class DiseaseHarmonizer:
-    # Class for handling multi-source data harmonization
+    """Class for handling multi-source data harmonization."""
     def __init__(self):
         # API endpoints
-        self.disease_api = "https://disease.sh/v3/covid-19/all"
+        self.disease_sh_api = "https://disease.sh/v3/covid-19/historical/all?lastdays=60"
         self.promed_rss = "https://promedmail.org/feed/"
-        
+       
     def fetch_global_stats(self) -> Dict[str, Any]:
-        """Fetch global COVID statistics."""
+        """Retrieve structured epidemiological data from Disease.sh."""
         try:
-            response = requests.get(self.disease_api, timeout=10)
+            response = requests.get(self.disease_sh_api, timeout=10)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -65,7 +67,7 @@ class DiseaseHarmonizer:
         }
 
     def harmonize(self, disease_query: str = "COVID-19") -> Dict[str, Any]:
-        # Unify structured data with unstructured alerts
+        """Unify structured data with unstructured alerts."""
         stats = self.fetch_global_stats()
         alerts = self.fetch_promed_alerts()
         

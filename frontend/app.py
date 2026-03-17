@@ -1,8 +1,13 @@
-import streamlit as st
-import pandas as pd
-import requests
-import plotly.graph_objects as go
+"""
+Streamlit frontend for the Epidemiological Twin.
+Final submission version for March 18th.
+"""
+
 from datetime import datetime, timedelta
+import requests
+import pandas as pd
+import streamlit as st
+import plotly.graph_objects as go
 
 # Application configuration
 st.set_page_config(
@@ -70,25 +75,27 @@ st.markdown("Automated parameter identification using Physics-Informed Neural Ne
 if 'data' in st.session_state:
     data = st.session_state['data']
     modeling = data.get('modeling', {})
-    kinetics = modeling.get('metadata', {}).get('inferred_kinetics', {})
+    meta = modeling.get('metadata', {})
+    kinetics = meta.get('kinetics', {})
 
-    # Metrics
+    # System Metrics Display
     m1, m2, m3, m4 = st.columns(4)
     with m1:
-        st.metric("R0 (Reproduction Number)", f"{kinetics.get('r_naught', 0):.2f}")
+        st.metric("R0 (Reproduction Number)", f"{kinetics.get('r0', 0):.2f}")
     with m2:
         st.metric("Beta (Transmission)", f"{kinetics.get('beta', 0):.4f}")
     with m3:
         st.metric("Gamma (Recovery)", f"{kinetics.get('gamma', 0):.4f}")
     with m4:
-        st.metric("Cycles", f"{iterations}")
+        st.metric("Simulation Cycles", f"{iterations}")
 
     # Visualization
     st.markdown("## Spatiotemporal Graph-PINN Analysis")
     
+    # High-fidelity curve selection
     historical = modeling.get('historical', [])
-    full_traj = modeling.get('primary_node', [])
-    coupled_traj = modeling.get('coupled_node_threat', [])
+    full_traj = modeling.get('primary', [])
+    coupled_traj = modeling.get('coupled', [])
     
     # Date alignment
     total_days = len(full_traj)

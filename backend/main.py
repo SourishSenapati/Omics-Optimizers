@@ -1,5 +1,7 @@
-# Main API gateway
-# Final technical version for March 18th
+"""
+Main API gateway for the Epidemiological Twin.
+Final technical version for March 18th submission.
+"""
 
 import requests
 import uvicorn
@@ -16,7 +18,7 @@ pinn_engine = PINNEngine(population=8000000000)
 
 @app.get("/")
 async def status():
-    # Health check endpoint
+    """Health check endpoint for the inference core."""
     return {
         "status": "online",
         "timestamp": "2026-03-17",
@@ -62,6 +64,15 @@ async def surveillance(disease: str = "COVID-19", epochs: int = 10000, intervent
         data["modeling"] = {"error": f"Runtime error: {str(e)}"}
         
     return data
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Ensure hardware acceleration is verified on startup."""
+    if torch.cuda.is_available():
+        print("[FASTAPI] Hardware acceleration verified (CUDA).")
+    else:
+        print("[FASTAPI] CPU fallback mode active.")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,11 +1,13 @@
-# Verification script for upgraded backend components
-# Validates Graph-PINN logic and Optimal Control simulations
+"""
+High-fidelity verification script for the PINN engine.
+"""
 
 import time
 import torch
 from core.pinn_engine import PINNEngine
 
 def verify_v2_calibration():
+    """Verify inference across primary and coupled graph nodes."""
     # Performance assessment of the upgraded optimizer
     print("--- High-Fidelity V2 Calibration Test ---")
     if torch.cuda.is_available():
