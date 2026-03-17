@@ -24,7 +24,7 @@ async def status():
     }
 
 @app.get("/api/surveillance")
-async def surveillance(disease: str = "COVID-19", epochs: int = 10000):
+async def surveillance(disease: str = "COVID-19", epochs: int = 10000, intervention: float = 0.0):
     # API for data ingestion and high-fidelity modeling
     data = harmonizer.harmonize(disease)
     
@@ -49,8 +49,8 @@ async def surveillance(disease: str = "COVID-19", epochs: int = 10000):
         # PINN training/calibration
         pinn_engine.train(s_vals, i_vals, r_vals, epochs=epochs)
         
-        # Model projection
-        forecast_res = pinn_engine.get_forecast(days_past=len(raw_cases))
+        # Model projection with Intervention Support
+        forecast_res = pinn_engine.get_forecast(days_past=len(raw_cases), intervention=intervention)
         forecast_res["historical"] = active
         data["modeling"] = forecast_res
         

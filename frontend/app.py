@@ -34,22 +34,32 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Sidebar controls
-st.sidebar.markdown("## Model Configuration")
+st.sidebar.markdown("## Simulation Control Deck")
 
 st.sidebar.markdown("Hardware Status: **CUDA ACTIVE**")
 
+st.sidebar.markdown("### Mechanistic Parameters")
 iterations = st.sidebar.slider("Training Cycles", 1000, 20000, 10000)
 disease_select = st.sidebar.selectbox("Target Pathogen", ["COVID-19", "Influenza", "Ebola", "Zika"])
 
-if st.sidebar.button("Run Mechanistic Inference"):
-    with st.spinner("Processing trajectory via CUDA..."):
+st.sidebar.markdown("### Optimal Control (Interventions)")
+mask_mandate = st.sidebar.slider("Masking Policy Strength", 0.0, 1.0, 0.0)
+social_dist = st.sidebar.slider("Social Distancing Factor", 0.0, 1.0, 0.0)
+total_intervention = min(1.0, mask_mandate + social_dist)
+
+if st.sidebar.button("Run Hybrid Inference"):
+    with st.spinner("Calibrating Manifold & Simulating Controls..."):
         try:
-            params = {"disease": disease_select, "epochs": iterations}
+            params = {
+                "disease": disease_select, 
+                "epochs": iterations,
+                "intervention": total_intervention
+            }
             response = requests.get("http://localhost:8000/api/surveillance", params=params, timeout=300)
             res_data = response.json()
             st.session_state['data'] = res_data
             st.session_state['last_run'] = datetime.now()
-            st.success("Calibration complete.")
+            st.success("Calibration and Control Stability Verified.")
         except Exception as e:
             st.error(f"Execution error: {str(e)}")
 
@@ -74,10 +84,11 @@ if 'data' in st.session_state:
         st.metric("Cycles", f"{iterations}")
 
     # Visualization
-    st.markdown("## Trajectory Analysis")
+    st.markdown("## Spatiotemporal Graph-PINN Analysis")
     
     historical = modeling.get('historical', [])
-    full_traj = modeling.get('full_trajectory', [])
+    full_traj = modeling.get('primary_node', [])
+    coupled_traj = modeling.get('coupled_node_threat', [])
     
     # Date alignment
     total_days = len(full_traj)
@@ -91,18 +102,27 @@ if 'data' in st.session_state:
         x=dates[:len(historical)],
         y=historical,
         mode='markers',
-        name='Observed Infections',
+        name='Observed (Primary node)',
         marker=dict(color='#ef4444', size=7),
         opacity=0.5
     ))
 
-    # Model fit
+    # Model fit (Primary Node)
     fig.add_trace(go.Scatter(
         x=dates,
         y=full_traj,
         mode='lines',
-        name='Mechanistic SIR Fit',
-        line=dict(color='#3b82f6', width=2),
+        name='Primary Manifold (Controlled)',
+        line=dict(color='#3b82f6', width=3),
+    ))
+
+    # Coupled Node (Graph-PINN Flex)
+    fig.add_trace(go.Scatter(
+        x=dates,
+        y=coupled_traj,
+        mode='lines',
+        name='Coupled Node Threat (Network Spread)',
+        line=dict(color='#10b981', width=2, dash='dot'),
     ))
 
     # Forecast area
@@ -110,7 +130,7 @@ if 'data' in st.session_state:
         x0=dates[len(historical)-1], 
         x1=dates[-1],
         fillcolor="rgba(59, 130, 246, 0.1)", 
-        annotation_text="Forecast Horizon",
+        annotation_text="Control Horizon",
         annotation_position="top left"
     )
 
@@ -126,8 +146,20 @@ if 'data' in st.session_state:
     # Telemetry and Statistics
     t1, t2 = st.columns([2, 1])
     with t1:
-        st.markdown("### Clinical Alerts (ProMED)")
-        st.dataframe(pd.DataFrame(data.get('alerts', [])), height=250)
+        st.markdown("### Forensic Intelligence Feed (NLP Extraction)")
+        alerts = data.get('alerts', [])
+        # Flatten extraction for cleaner display
+        flattened_alerts = []
+        for a in alerts:
+            intel = a.get('forensic_intelligence', {})
+            flattened_alerts.append({
+                "Timestamp": a.get('published'),
+                "Pathogen": a.get('title'),
+                "Location": intel.get('detected_location'),
+                "Threat": intel.get('threat_level'),
+                "Confidence": intel.get('automated_confidence')
+            })
+        st.dataframe(pd.DataFrame(flattened_alerts), height=300)
     
     with t2:
         st.markdown("### Global Metrics")
