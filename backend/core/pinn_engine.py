@@ -30,9 +30,16 @@ class PINNEngine:
         self.total_pop = population
         self.model = EpiPINN().to(DEVICE)
         self.log_file = os.path.join("docs", "logs", f"training_log_{int(time.time())}.txt")
+        self.model_path = os.path.join("docs", "models", "latest_pinn.pt")
         print(f"[ENGINE] Hardware: {DEVICE.type.upper()}")
+
+    def save(self):
+        """Persist the neural network state to disk."""
+        os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
+        torch.save(self.model.state_dict(), self.model_path)
+        print(f"[ENGINE] Checkpoint secured: {self.model_path}")
         
-    def train(self, s_data: torch.Tensor, i_data: torch.Tensor, r_data: torch.Tensor, epochs: int = 15000):
+    def train(self, s_data: torch.Tensor, i_data: torch.Tensor, r_data: torch.Tensor, epochs: int = 15000, print_freq: int = 1000):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-4)
         t_data = torch.linspace(0, len(s_data) - 1, len(s_data), device=DEVICE).view(-1, 1).requires_grad_(True)
         s_target, i_target, r_target = s_data.view(-1, 1).to(DEVICE), i_data.view(-1, 1).to(DEVICE), r_data.view(-1, 1).to(DEVICE)
@@ -42,32 +49,39 @@ class PINNEngine:
             f.write(f"--- Training Session Started ({epochs} epochs) ---\n")
             f.write(f"Hardware: {DEVICE.type.upper()}\n")
 
-        for epoch in range(epochs):
-            optimizer.zero_grad()
-            preds = self.model(t_data)
-            s_p, i_p, r_p = preds[:, 0:1], preds[:, 1:2], preds[:, 2:3]
+        try:
+            for epoch in range(epochs):
+                optimizer.zero_grad()
+                preds = self.model(t_data)
+                s_p, i_p, r_p = preds[:, 0:1], preds[:, 1:2], preds[:, 2:3]
+                
+                ds_dt = torch.autograd.grad(s_p, t_data, torch.ones_like(s_p), create_graph=True)[0]
+                di_dt = torch.autograd.grad(i_p, t_data, torch.ones_like(i_p), create_graph=True)[0]
+                dr_dt = torch.autograd.grad(r_p, t_data, torch.ones_like(r_p), create_graph=True)[0]
+                
+                f_s = ds_dt + self.model.beta * s_p * i_p
+                f_i = di_dt - self.model.beta * s_p * i_p + self.model.gamma * i_p
+                f_r = dr_dt - self.model.gamma * i_p
+                
+                loss_phys = torch.mean(f_s**2 + f_i**2 + f_r**2)
+                loss_data = torch.mean((s_p - s_target)**2 + (i_p - i_target)**2 + (r_p - r_target)**2)
+                total_loss = loss_data + 0.1 * loss_phys
+                
+                total_loss.backward()
+                optimizer.step()
+                
+                if epoch % 100 == 0:
+                    log_entry = f"Epoch {epoch} | Loss: {total_loss.item():.8f} | Beta: {self.model.beta.item():.4f} | Gamma: {self.model.gamma.item():.4f}\n"
+                    with open(self.log_file, "a", encoding="utf-8") as f:
+                        f.write(log_entry)
+                
+                if epoch % print_freq == 0:
+                    print(f"Epoch {epoch} | Loss: {total_loss.item():.8f} | Beta: {self.model.beta.item():.4f} | Gamma: {self.model.gamma.item():.4f}")
             
-            ds_dt = torch.autograd.grad(s_p, t_data, torch.ones_like(s_p), create_graph=True)[0]
-            di_dt = torch.autograd.grad(i_p, t_data, torch.ones_like(i_p), create_graph=True)[0]
-            dr_dt = torch.autograd.grad(r_p, t_data, torch.ones_like(r_p), create_graph=True)[0]
-            
-            f_s = ds_dt + self.model.beta * s_p * i_p
-            f_i = di_dt - self.model.beta * s_p * i_p + self.model.gamma * i_p
-            f_r = dr_dt - self.model.gamma * i_p
-            
-            loss_phys = torch.mean(f_s**2 + f_i**2 + f_r**2)
-            loss_data = torch.mean((s_p - s_target)**2 + (i_p - i_target)**2 + (r_p - r_target)**2)
-            total_loss = loss_data + 0.1 * loss_phys
-            
-            total_loss.backward()
-            optimizer.step()
-            
-            if epoch % 100 == 0:
-                log_entry = f"Epoch {epoch} | Loss: {total_loss.item():.8f} | Beta: {self.model.beta.item():.4f} | Gamma: {self.model.gamma.item():.4f}\n"
-                with open(self.log_file, "a", encoding="utf-8") as f:
-                    f.write(log_entry)
-                if epoch % 1000 == 0:
-                    print(log_entry.strip())
+            self.save()
+        except KeyboardInterrupt:
+            print("\n[ENGINE] Interrupt detected. Finalizing checkpoint...")
+            self.save()
                 
         return self.model
 

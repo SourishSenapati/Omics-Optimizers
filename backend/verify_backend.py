@@ -24,21 +24,21 @@ def verify_v2_calibration():
     r_dummy = torch.linspace(0.0, 0.02, 60)
     
     t_start = time.time()
-    # 2000 cycle quick test for V2 logic
-    engine.train(s_dummy, i_dummy, r_dummy, epochs=2000)
+    # 20,000 cycle deep-test for V2 logic
+    engine.train(s_dummy, i_dummy, r_dummy, epochs=20000, print_freq=1)
     t_end = time.time()
     
     # Test with 30% intervention
     res = engine.get_forecast(days_past=60, days_future=14, intervention=0.3)
-    kinetics = res['metadata']['inferred_kinetics']
+    kinetics = res['metadata']['kinetics']
     
     print("\n[PERFORMANCE RESULTS]")
-    print(f"Time for 2k Cycles: {t_end - t_start:.2f} seconds")
+    print(f"Time for 20k Cycles: {t_end - t_start:.2f} seconds")
     print(f"Learned Beta: {kinetics['beta']:.4f}")
-    print(f"Effective Beta (30% Intervention): {kinetics['beta_effective']:.4f}")
-    print(f"Graph-Coupled Node Points: {len(res['coupled_node_threat'])}")
+    print(f"Effective Beta (30% Intervention): {kinetics['beta_eff']:.4f}")
+    print(f"Graph-Coupled Node Points: {len(res['coupled'])}")
     
-    if len(res['primary_node']) == 74: # 60 past + 14 future
+    if len(res['primary']) == 74: # 60 past + 14 future
         print("[SUCCESS] Trajectory alignment verified.")
     
     print("\n--- V2 Calibration Test Complete ---")

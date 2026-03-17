@@ -14,7 +14,6 @@ class DiseaseHarmonizer:
         # API endpoints
         self.disease_sh_api = "https://disease.sh/v3/covid-19/historical/all?lastdays=60"
         self.promed_rss = "https://promedmail.org/feed/"
-       
     def fetch_global_stats(self) -> Dict[str, Any]:
         """Retrieve structured epidemiological data from Disease.sh."""
         try:
@@ -42,8 +41,9 @@ class DiseaseHarmonizer:
                     "forensic_intelligence": extraction
                 })
             return alerts
-        except (AttributeError, KeyError) as e:
-            return [{"error": str(e)}]
+        except (AttributeError, KeyError, Exception) as e:
+            print(f"[INGESTION] Warning: Feed extraction stalled - {str(e)}")
+            return []
 
     def _extract_entities(self, text: str) -> Dict[str, Any]:
         """Heuristic-based extraction of epidemiological variables from raw reports."""
