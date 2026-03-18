@@ -16,6 +16,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from core.ingestion import DiseaseHarmonizer
 from core.pinn_engine import PINNEngine
+from therapeutics_agent import TherapeuticsAgent
 
 app = FastAPI(title="Epidemiological Twin - Mechanistic Inference Core")
 
@@ -31,6 +32,7 @@ app.add_middleware(
 # Module initialization
 harmonizer = DiseaseHarmonizer()
 pinn_engine = PINNEngine(population=8000000000)
+therapeutics_agent = TherapeuticsAgent()
 
 # Static file serving
 static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "static")
@@ -102,6 +104,12 @@ async def surveillance(disease: str = "COVID-19"):
     New dashboard uses the /train and /forensic_feed endpoints.
     """
     data = await run_in_threadpool(harmonizer.harmonize, disease)
+    return data
+
+@app.get("/api/therapeutics")
+async def get_therapeutics(drug: str = "Dexamethasone"):
+    """Provides therapeutic information for a given drug or pathogen."""
+    data = await run_in_threadpool(therapeutics_agent.query_drug_mechanism, drug)
     return data
 
 

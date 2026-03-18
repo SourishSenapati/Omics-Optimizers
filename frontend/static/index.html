@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omics Optimizers | Explainer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #020617;
+            --card: #1e293b;
+            --accent: #3b82f6;
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+        }
+        .header {
+            padding: 80px 20px;
+            text-align: center;
+            background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+        }
+        h1 { font-size: 3rem; margin: 0; font-weight: 800; background: linear-gradient(90deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 1.25rem; color: var(--text-dim); margin-top: 10px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+        .section { margin-bottom: 60px; }
+        h2 { font-size: 2rem; border-left: 4px solid var(--accent); padding-left: 15px; margin-bottom: 25px; }
+        p { margin-bottom: 20px; font-size: 1.1rem; color: #cbd5e1; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 40px; }
+        .card { background: var(--card); padding: 30px; border-radius: 16px; border: 1px solid #334155; }
+        .card h3 { margin-top: 0; color: var(--accent); }
+        .footer { text-align: center; padding: 40px; color: var(--text-dim); border-top: 1px solid #1e293b; }
+        .btn { display: inline-block; padding: 12px 24px; background: var(--accent); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 20px; transition: transform 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        code { background: #0f172a; padding: 2px 6px; border-radius: 4px; color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Omics Optimizers</h1>
+        <div class="subtitle">Epidemiological Digital Twin for Mechanistic Surveillance</div>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h2>The Science of Mechanism</h2>
+            <p>Traditional black-box models often fail when data is sparse. Our <strong>Physics-Informed Neural Network (PINN)</strong> doesn't just look for patterns; it enforces the <code>SIR Differential Equations</code> inside the deep learning loss function.</p>
+            <p>This guarantees that every projection follows the biological laws of transmission, identified by our engine's unique ability to extract the <code>beta</code> (transmission) and <code>gamma</code> (recovery) rates from raw telemetry.</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>🧬 Genomic Alignment</h3>
+                <p>Connecting population-level spikes to strain-specific genomic targets via PubChem integration.</p>
+            </div>
+            <div class="card">
+                <h3>📊 Policy Simulation</h3>
+                <p>An interactive sandbox allowing policymakers to "flatten the curve" by testing NPI strength live.</p>
+            </div>
+            <div class="card">
+                <h3>🏥 ICD-11 Oncology</h3>
+                <p>Standardized medical taxonomy ensuring interoperability with WHO and CDC global registries.</p>
+            </div>
+            <div class="card">
+                <h3>📡 Forensic Intel</h3>
+                <p>NLP-extracted clinical alerts from ProMED-mail for real-time risk assessment.</p>
+            </div>
+        </div>
+
+        <div class="section" style="margin-top: 60px; text-align: center;">
+            <h2>Launch Prototype</h2>
+            <p>Access the live mechanistic manifold and intervention simulator below.</p>
+            <a href="https://omics-optimizers.streamlit.app" class="btn">Enter Command & Control Dashboard</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        © 2026 Omics Optimizers | Jadavpur University
+    </div>
+</body>
+</html>
