@@ -127,10 +127,11 @@ if st.sidebar.button("Execute Surveillance Cycle"):
                     "epochs": iterations,
                     "intervention_factor": total_intervention
                 }
-                response = requests.post("http://localhost:8000/train", json=params, timeout=300)
+                backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+                response = requests.post(f"{backend_url}/train", json=params, timeout=300)
                 res_data = response.json()
                 if res_data['status'] == 'success':
-                    alerts_resp = requests.get("http://localhost:8000/forensic_feed")
+                    alerts_resp = requests.get(f"{backend_url}/forensic_feed")
                     res_data['alerts'] = alerts_resp.json()
                     st.session_state['data'] = res_data
                     st.session_state['last_run'] = datetime.now()
@@ -252,7 +253,8 @@ if 'data' in st.session_state:
         with col1:
             st.markdown(f"#### Target Drug: **{drug_name}**")
             try:
-                t_resp = requests.get(f"http://localhost:8000/api/therapeutics?drug={drug_name}")
+                backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
+                t_resp = requests.get(f"{backend_url}/api/therapeutics?drug={drug_name}")
                 t_data = t_resp.json()
                 if t_data.get('status') == 'success':
                     st.info(f"**Mechanism:** {t_data.get('Mechanism')}")
