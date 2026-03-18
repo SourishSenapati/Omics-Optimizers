@@ -40,7 +40,6 @@ ICD_11_TAXONOMY = {
 # Application configuration
 st.set_page_config(
     page_title="Omics Optimizers | Epimorphic Surveillance",
-    page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -142,8 +141,9 @@ if st.sidebar.button("Execute Surveillance Cycle"):
                 st.sidebar.error(f"Execution Error: {str(e)}")
 
 # Header Section
-st.title("🛡️ Omics Optimizers: Epidemiological Twin")
-st.markdown("*Precision Surveillance & Mechanistic Forecasting for Public Health Decision Support*")
+st.title("Omics Optimizers: Epidemiological Twin")
+st.markdown("### Precision Surveillance & Mechanistic Forecasting for Public Health Decision Support")
+st.divider()
 
 if 'data' in st.session_state:
     data = st.session_state['data']
@@ -156,17 +156,17 @@ if 'data' in st.session_state:
     gamma = kinetics.get('gamma', 0.1)
     r0_learned = kinetics.get('r0', baseline_beta / gamma)
 
-    # Fatal Flaw 2: Executive Threat Translation
+    # Executive Policy Briefing
     st.markdown("### Executive Policy Briefing")
     if r0_learned > 1.2:
-        st.error(f"🚨 **CRITICAL: OUTBREAK ACCELERATING** (R₀ = {r0_learned:.2f}). The outbreak is accelerating geometrically. Immediate Non-Pharmaceutical Interventions (NPIs) required.")
+        st.error(f"CRITICAL: OUTBREAK ACCELERATING (R₀ = {r0_learned:.2f}). The outbreak is accelerating geometrically. Immediate Non-Pharmaceutical Interventions (NPIs) required.")
     elif r0_learned > 0.9:
-        st.warning(f"⚠️ **WARNING: PERSISTENT TRANSMISSION** (R₀ = {r0_learned:.2f}). Outbreak is persistent. Healthcare capacity monitoring advised.")
+        st.warning(f"WARNING: PERSISTENT TRANSMISSION (R₀ = {r0_learned:.2f}). Outbreak is persistent. Healthcare capacity monitoring advised.")
     else:
-        st.success(f"✅ **STABLE: OUTBREAK DECAYING** (R₀ = {r0_learned:.2f}). Outbreak is decaying. Current containment protocols are effective.")
+        st.success(f"STABLE: OUTBREAK DECAYING (R₀ = {r0_learned:.2f}). Outbreak is decaying. Current containment protocols are effective.")
 
     # Dashboard Tabs
-    tab1, tab2, tab3 = st.tabs(["📊 Epidemiological Manifold", "💊 Therapeutic Insights", "📡 Intelligence Feed"])
+    tab1, tab2, tab3 = st.tabs(["Epidemiological Manifold", "Therapeutic Insights", "Intelligence Feed"])
 
     with tab1:
         # System Metrics
@@ -290,15 +290,16 @@ if 'data' in st.session_state:
 
 else:
     st.info("System Ready. Please execute a surveillance cycle from the sidebar to initialize the mechanistic manifold.")
+    st.divider()
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("### 🔬 Mechanistic PINNs")
+        st.markdown("### Mechanistic PINNs")
         st.write("Deep learning identifying the physics of transmission.")
     with c2:
-        st.markdown("### 🧬 Genomics & ICD-11")
+        st.markdown("### Genomics & ICD-11")
         st.write("Full medical taxonomy and therapeutic alignment.")
     with c3:
-        st.markdown("### 🕴️ Policy Simulation")
+        st.markdown("### Policy Simulation")
         st.write("Flatten the curve live with interactive NPI testing.")
 
 # Footer
