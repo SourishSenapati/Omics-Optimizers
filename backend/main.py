@@ -1,68 +1,107 @@
-"""
-Main API gateway for the Epidemiological Twin.
-Final technical version for March 18th submission.
-"""
+import os
+import sys
+from typing import Dict, Any
 
 import requests
-import uvicorn
 import torch
-from fastapi import FastAPI
+import uvicorn
+from fastapi import FastAPI, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from starlette.concurrency import run_in_threadpool
+
+# Resolve backend path for terminal execution
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from core.ingestion import DiseaseHarmonizer
 from core.pinn_engine import PINNEngine
 
 app = FastAPI(title="Epidemiological Twin - Mechanistic Inference Core")
 
+# Enable CORS for the static frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Module initialization
 harmonizer = DiseaseHarmonizer()
 pinn_engine = PINNEngine(population=8000000000)
 
+# Static file serving
+static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "static")
+app.mount("/assets", StaticFiles(directory=static_path), name="static")
+
 @app.get("/")
-async def status():
-    """Health check endpoint for the inference core."""
+async def serve_index():
+    """Serves the primary web dashboard entry point."""
+    return FileResponse(os.path.join(static_path, "index.html"))
+
+@app.get("/heartbeat")
+async def heartbeat():
+    """Returns engine and hardware status."""
     return {
         "status": "online",
-        "timestamp": "2026-03-17",
-        "version": "1.0.0"
+        "cuda": torch.cuda.is_available(),
+        "device": str(next(pinn_engine.model.parameters()).device) if hasattr(pinn_engine, "model") else "cpu"
     }
 
-@app.get("/api/surveillance")
-async def surveillance(disease: str = "COVID-19", epochs: int = 10000, intervention: float = 0.0):
-    # API for data ingestion and high-fidelity modeling
-    data = harmonizer.harmonize(disease)
-    
+@app.get("/forensic_feed")
+async def get_forensic_feed():
+    """Provides news-based intelligence feed."""
+    return await run_in_threadpool(harmonizer.fetch_promed_alerts)
+
+@app.post("/train")
+async def train_pinn(config: Dict[str, Any]):
+    """Calibrates and forecasts the epidemic manifold."""
+    epochs = config.get("epochs", 10000)
+    intervention = config.get("intervention_factor", 0.0)
+
     try:
-        # Fetch historical cases for calibration
+        # Standard COVID-19 data source for calibration
         hist_url = "https://disease.sh/v3/covid-19/historical/all?lastdays=60"
-        hist_response = requests.get(hist_url, timeout=15).json()
+        hist_response = await run_in_threadpool(lambda: requests.get(hist_url, timeout=15).json())
         
         raw_cases = list(hist_response['cases'].values())
         raw_recovered = list(hist_response['recovered'].values())
         raw_deaths = list(hist_response['deaths'].values())
-        
+
         # Calculate active infections for the training manifold
         active = [c - r - d for c, r, d in zip(raw_cases, raw_recovered, raw_deaths)]
-        
-        # Modeling parameters
         pop = 8000000000
+
+        # Data prep for PyTorch
         s_vals = torch.tensor([(pop - c) / pop for c in raw_cases], dtype=torch.float32)
         i_vals = torch.tensor([i / pop for i in active], dtype=torch.float32)
         r_vals = torch.tensor([r / pop for r in raw_recovered], dtype=torch.float32)
+
+        # Calibration (Wrapped in threadpool to prevent sticking)
+        await run_in_threadpool(pinn_engine.train, s_vals, i_vals, r_vals, epochs=epochs)
+
+        # Projection
+        results = pinn_engine.get_forecast(days_past=len(raw_cases), intervention=intervention)
         
-        # PINN training/calibration
-        pinn_engine.train(s_vals, i_vals, r_vals, epochs=epochs)
+        # Slicing the already-scaled 'primary' curve into fitting and forecasting parts
+        results["historical_fit"] = results["primary"][:len(raw_cases)]
+        results["prediction_next_7_days"] = results["primary"][len(raw_cases):len(raw_cases)+7]
+
+        return {"status": "success", "results": results}
         
-        # Model projection with Intervention Support
-        forecast_res = pinn_engine.get_forecast(days_past=len(raw_cases), intervention=intervention)
-        forecast_res["historical"] = active
-        data["modeling"] = forecast_res
-        
-    except requests.exceptions.RequestException as e:
-        data["modeling"] = {"error": f"Connection error: {str(e)}"}
-    except (KeyError, ValueError) as e:
-        data["modeling"] = {"error": f"Data error: {str(e)}"}
     except Exception as e:
-        data["modeling"] = {"error": f"Runtime error: {str(e)}"}
-        
+        print(f"[ENGINE ERROR] Inference cycle failed: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/surveillance")
+async def surveillance(disease: str = "COVID-19"):
+    """
+    DEPRECATED: Support for legacy surveillance calls.
+    New dashboard uses the /train and /forensic_feed endpoints.
+    """
+    data = await run_in_threadpool(harmonizer.harmonize, disease)
     return data
 
 

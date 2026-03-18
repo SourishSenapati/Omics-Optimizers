@@ -1,5 +1,11 @@
+# Exclude objects specifically over 100MB to avoid GitHub rejection
 Omics Optimizers.mp4
-*.zip
+OmicsOptimizer FinalVideo.mp4
+Omics_Optimizer_Final_Submission.zip
+
+# Include smaller zip if preferred
+# Omics_Optimizers_Submission.zip is ~73MB and should pass
+
 __pycache__/
 *.py[cod]
 *$py.class
